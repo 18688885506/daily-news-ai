@@ -1,14 +1,17 @@
 import os
-import requests
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 import feedparser
 from openai import OpenAI
 from datetime import datetime
 
-# 获取你的两把钥匙
-PUSHPLUS_TOKEN = os.environ.get("PUSHPLUS_TOKEN")
+# 获取你的秘钥和邮箱信息
+QQ_EMAIL = os.environ.get("QQ_EMAIL")
+QQ_AUTH_CODE = os.environ.get("QQ_AUTH_CODE")
 AI_API_KEY = os.environ.get("AI_API_KEY")
 
-# 连接硅基流动大模型（完全兼容 OpenAI 格式）
+# 连接硅基流动大模型
 client = OpenAI(
     api_key=AI_API_KEY,
     base_url="https://api.siliconflow.cn/v1"
@@ -27,22 +30,36 @@ def analyze_news(news_text):
     """让 AI 算命并写报告"""
     prompt = f"你是我的私人情报分析师。请阅读以下今日新闻，总结核心内容，并预测这些事件可能对金融、生活或教育科研产生的潜在影响：\n{news_text}"
     
-    # 使用阿里开源的通义千问模型（在硅基流动上永久免费！）
     response = client.chat.completions.create(
         model="Qwen/Qwen2.5-7B-Instruct",
         messages=[{"role": "user", "content": prompt}]
     )
     return response.choices[0].message.content
 
-def send_wechat(content):
-    """把报告发给微信"""
-    url = "http://www.pushplus.plus/send"
-    data = {
-        "token": PUSHPLUS_TOKEN,
-        "title": f"💡 今日AI新闻预测 {datetime.now().strftime('%Y-%m-%d')}",
-        "content": content
-    }
-    requests.post(url, json=data)
+def send_email(content):
+    """把报告发送到 QQ 邮箱"""
+    smtp_server = "smtp.qq.com"
+    smtp_port = 465 # QQ邮箱的加密端口
+    
+    # 准备邮件内容
+    msg = MIMEMultipart()
+    msg['From'] = QQ_EMAIL
+    msg['To'] = QQ_EMAIL  # 发件人和收件人都是你自己
+    msg['Subject'] = f"💡 今日AI新闻预测 {datetime.now().strftime('%Y-%m-%d')}"
+    
+    # 把内容放进邮件正文
+    body = MIMEText(content, 'plain', 'utf-8')
+    msg.attach(body)
+    
+    # 发送动作
+    try:
+        server = smtplib.SMTP_SSL(smtp_server, smtp_port)
+        server.login(QQ_EMAIL, QQ_AUTH_CODE)
+        server.sendmail(QQ_EMAIL, [QQ_EMAIL], msg.as_string())
+        server.quit()
+        print("✅ QQ 邮件发送成功！")
+    except Exception as e:
+        print(f"❌ 邮件发送失败: {e}")
 
 def update_webpage(content):
     """把报告做成一个漂亮的网页"""
@@ -65,8 +82,8 @@ if __name__ == "__main__":
     news = get_news()
     print("2. 正在呼叫 AI 大脑进行分析...")
     analysis = analyze_news(news)
-    print("3. 正在发送微信提醒...")
-    send_wechat(analysis)
+    print("3. 正在发送QQ邮件提醒...")
+    send_email(analysis)
     print("4. 正在生成今日网页...")
     update_webpage(analysis)
     print("🎉 全部任务搞定！")
