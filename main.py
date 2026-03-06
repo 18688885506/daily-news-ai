@@ -1,15 +1,18 @@
 import os
 import requests
 import feedparser
-from google import genai
+from openai import OpenAI
 from datetime import datetime
 
 # 获取你的两把钥匙
 PUSHPLUS_TOKEN = os.environ.get("PUSHPLUS_TOKEN")
-GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
+AI_API_KEY = os.environ.get("AI_API_KEY")
 
-# 启动最新的 Gemini AI 大脑
-client = genai.Client(api_key=GEMINI_API_KEY)
+# 连接硅基流动大模型（完全兼容 OpenAI 格式）
+client = OpenAI(
+    api_key=AI_API_KEY,
+    base_url="https://api.siliconflow.cn/v1"
+)
 
 def get_news():
     """去新浪新闻抓取今日焦点新闻"""
@@ -23,12 +26,13 @@ def get_news():
 def analyze_news(news_text):
     """让 AI 算命并写报告"""
     prompt = f"你是我的私人情报分析师。请阅读以下今日新闻，总结核心内容，并预测这些事件可能对金融、生活或教育科研产生的潜在影响：\n{news_text}"
-    # 使用最新的模型调用方式
-    response = client.models.generate_content(
-        model='gemini-2.0-flash',
-        contents=prompt
+    
+    # 使用阿里开源的通义千问模型（在硅基流动上永久免费！）
+    response = client.chat.completions.create(
+        model="Qwen/Qwen2.5-7B-Instruct",
+        messages=[{"role": "user", "content": prompt}]
     )
-    return response.text
+    return response.choices[0].message.content
 
 def send_wechat(content):
     """把报告发给微信"""
