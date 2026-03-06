@@ -1,16 +1,15 @@
 import os
 import requests
 import feedparser
-import google.generativeai as genai
+from google import genai
 from datetime import datetime
 
 # 获取你的两把钥匙
 PUSHPLUS_TOKEN = os.environ.get("PUSHPLUS_TOKEN")
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 
-# 启动 Gemini AI 大脑
-genai.configure(api_key=GEMINI_API_KEY)
-model = genai.GenerativeModel('gemini-1.5-flash')
+# 启动最新的 Gemini AI 大脑
+client = genai.Client(api_key=GEMINI_API_KEY)
 
 def get_news():
     """去新浪新闻抓取今日焦点新闻"""
@@ -24,7 +23,11 @@ def get_news():
 def analyze_news(news_text):
     """让 AI 算命并写报告"""
     prompt = f"你是我的私人情报分析师。请阅读以下今日新闻，总结核心内容，并预测这些事件可能对金融、生活或教育科研产生的潜在影响：\n{news_text}"
-    response = model.generate_content(prompt)
+    # 使用最新的模型调用方式
+    response = client.models.generate_content(
+        model='gemini-2.0-flash',
+        contents=prompt
+    )
     return response.text
 
 def send_wechat(content):
