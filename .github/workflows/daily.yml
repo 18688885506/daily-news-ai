@@ -26,8 +26,9 @@ jobs:
 
       - name: 4. 执行 AI 脚本
         env:
-          PUSHPLUS_TOKEN: ${{ secrets.PUSHPLUS_TOKEN }}
-          AI_API_KEY: ${{ secrets.AI_API_KEY }}  # 这里改成了 AI_API_KEY
+          QQ_EMAIL: ${{ secrets.QQ_EMAIL }}
+          QQ_AUTH_CODE: ${{ secrets.QQ_AUTH_CODE }}
+          AI_API_KEY: ${{ secrets.AI_API_KEY }}
         run: python main.py
 
       - name: 5. 更新网页并保存
