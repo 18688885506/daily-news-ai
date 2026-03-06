@@ -1,0 +1,39 @@
+name: Daily News AI Bot
+
+on:
+  schedule:
+    # 每天北京时间早上 8 点自动运行
+    - cron: '0 0 * * *'
+  workflow_dispatch: # 允许你随时手动点击运行测试
+
+jobs:
+  run-and-publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # 给机器人修改文件生成网页的权限
+
+    steps:
+      - name: 1. 打开仓库
+        uses: actions/checkout@v3
+
+      - name: 2. 准备运行环境
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: 3. 安装所需工具包
+        run: pip install -r requirements.txt
+
+      - name: 4. 执行 AI 脚本
+        env:
+          PUSHPLUS_TOKEN: ${{ secrets.PUSHPLUS_TOKEN }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: python main.py
+
+      - name: 5. 更新网页并保存
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add index.html
+          git commit -m "更新今日新闻网页" || echo "无更新"
+          git push
